@@ -13,6 +13,7 @@ import android.support.v4.app.NotificationManagerCompat;
 import com.dieam.reactnativepushnotification.helpers.ApplicationBadgeHelper;
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
@@ -30,7 +31,7 @@ import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessaging;
 
-public class RNPushNotification extends ReactContextBaseJavaModule implements ActivityEventListener {
+public class RNPushNotification extends ReactContextBaseJavaModule implements ActivityEventListener, LifecycleEventListener {
     public static final String LOG_TAG = "RNPushNotification";// all logging should use this tag
 
     private RNPushNotificationHelper mRNPushNotificationHelper;
@@ -41,7 +42,7 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
         super(reactContext);
 
         reactContext.addActivityEventListener(this);
-
+        reactContext.addLifecycleEventListener(this);
         Application applicationContext = (Application) reactContext.getApplicationContext();
 
         // The @ReactNative methods use this
@@ -235,5 +236,28 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
     @ReactMethod
     public void registerNotificationActions(ReadableArray actions) {
         registerNotificationsReceiveNotificationActions(actions);
+    }
+    @Override
+    public void onHostResume() {
+        Activity activity = getCurrentActivity();
+        if (activity != null) {
+            Intent intent = activity.getIntent();
+            Bundle bundle = intent.getBundleExtra("notification");
+            if (bundle != null) {
+                bundle.putBoolean("foreground", false);
+                bundle.putBoolean("userInteraction", true);
+                mJsDelivery.notifyNotification(bundle);
+            }
+        }
+    }
+
+    @Override
+    public void onHostPause() {
+
+    }
+
+    @Override
+    public void onHostDestroy() {
+
     }
 }
